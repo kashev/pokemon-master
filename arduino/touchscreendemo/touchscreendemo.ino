@@ -30,8 +30,8 @@ void loop(void) {
     // BEAM goes low if IR beam is broken
     if (digitalRead(BEAM) == LOW) {
         if (beamDebounceCounter == 0) {
-            Serial.println('BREAK\n');
-            beamDebounceCounter = 1;  // 100ms debounce timer
+            Serial.println("BREAK");
+            beamDebounceCounter = 2;  // 200ms debounce timer
         }
         else {
             beamDebounceCounter = 0;
@@ -54,5 +54,5 @@ void loop(void) {
         Serial.println(p.z);
     }
 
-    delay(50);
+    delay(100);
 }
