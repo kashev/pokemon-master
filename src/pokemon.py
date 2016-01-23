@@ -15,15 +15,12 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty, BooleanProperty
-from kivy.uix.image import Image
 from kivy.uix.widget import Widget
-from kivy.lang import Builder
-from kivy.graphics import Canvas, Color, Ellipse, Rectangle
-from kivy.properties import StringProperty
+from kivy.graphics import Color, Rectangle
 
 
 # CONSTANTS
-POKEMON_DIR = os.path.join('..', 'res')
+POKEMON_DIR = os.path.join('data', 'images', 'pokemon')
 
 
 def read_from_port(game):
@@ -41,13 +38,13 @@ def read_from_port(game):
 
 
 class PokemonMaskWidget(Widget):
-
+    """ The mask. """
     def __init__(self, **kwargs):
         super(PokemonMaskWidget, self).__init__(**kwargs)
 
-        self.rect_size = 10
-        self.num_rows = 50
-        self.num_cols = 50
+        self.rect_size = 30
+        self.num_rows = 20
+        self.num_cols = 20
         self.num_rectangles_unmasked = 0
 
         with self.canvas:
@@ -58,17 +55,17 @@ class PokemonMaskWidget(Widget):
                           for row in range(self.num_rows)]
                          for col in range(self.num_cols)]
 
-    def on_touch_down(self, touch):
+    def remove(self, x, y):
         with self.canvas:
-            rect_x = int(touch.x / self.rect_size)
-            rect_y = int(touch.y / self.rect_size)
+            rect_x = int(x / self.rect_size)
+            rect_y = int(y / self.rect_size)
             if rect_x < self.num_cols and rect_y < self.num_rows:
                 self.canvas.remove(self.mask[rect_y][rect_x])
                 self.num_rectangles_unmasked += 1
 
 
 class PokemonMasterGame(BoxLayout):
-
+    """ A box layout, which is the whole game. """
     answer = StringProperty(None)
     data = StringProperty(None)
     consumed = BooleanProperty(True)
@@ -94,7 +91,6 @@ class PokemonApp(App):
     """ The Pokemon Master Game! """
     def build(self):
         game = PokemonMasterGame()
-        game.add_widget(PokemonMaskWidget())
 
         # Start data reading thread
         thread = Thread(target=read_from_port, args=(game,))
