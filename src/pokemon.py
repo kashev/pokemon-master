@@ -2,6 +2,12 @@
 # pokemon-master
 
 from kivy.app import App
+from kivy.uix.image import Image
+from kivy.properties import StringProperty
+
+
+class PokemonImage(Image):
+    source = StringProperty('../res/1891631-016pidgey.png')
 
 
 class PokemonApp(App):
