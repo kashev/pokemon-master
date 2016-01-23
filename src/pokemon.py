@@ -20,7 +20,7 @@ from kivy.graphics import Color, Rectangle
 
 
 # CONSTANTS
-POKEMON_DIR = os.path.join('data', 'images', 'pokemon')
+POKEMON_DIR = os.path.join('res', 'images', 'pokemon')
 
 
 def read_from_port(game):
