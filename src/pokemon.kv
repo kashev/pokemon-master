@@ -1,13 +1,27 @@
-<PokemonImage>:
-    size: 256, 256
-    pos: -150,  0
+<PokemonMasterGame>:
+    orientation: 'vertical'
 
-FloatLayout:
-    canvas:
-        Color:
-            rgb: 1, 1, 1
-        Rectangle:
-            source: 'data/images/whos_that_pokemon_blank.jpg'
-            size: self.size
+    FloatLayout:
+        size_hint_y: 1
+        size_hint_x: 1
+        pos: 0, 0
 
-    PokemonImage
+        canvas:
+            Color:
+                rgb: 1, 1, 1
+            Rectangle:
+                source: 'data/images/whos_that_pokemon_blank.jpg'
+                size: self.size
+
+        Image:
+            id: poke
+            size_hint:(None, None)
+            size: 256, 256
+            pos: 125,  150
+
+    TextInput:
+        size_hint_x: 1
+        size_hint_y: 0.075
+        multiline: False
+
+        id: guessbox
