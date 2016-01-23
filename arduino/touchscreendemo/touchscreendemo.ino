@@ -22,7 +22,7 @@ uint8_t beamDebounceCounter = 0;
 
 void setup(void) {
     Serial.begin(9600);
-    pinMode(BEAM, INPUT);
+    pinMode(BEAM, INPUT_PULLUP);
 }
 
 
