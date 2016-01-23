@@ -7,7 +7,7 @@ from kivy.properties import StringProperty
 
 
 class PokemonImage(Image):
-    source = StringProperty('../res/1891631-016pidgey.png')
+    source = StringProperty('../res/abra.png')
 
 
 class PokemonApp(App):
