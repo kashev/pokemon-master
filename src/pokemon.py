@@ -12,7 +12,6 @@ import vlc  # package python-vlc
 
 import serial
 from threading import Thread
-import random
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -26,22 +25,26 @@ from kivy.graphics import Color, Rectangle
 POKEMON_DIR = os.path.join('res', 'images', 'pokemon')
 SOUND_PATH = os.path.join('res', 'sounds')
 
-engine = pyttsx.init()
-engine.setProperty('rate', 70)
-
 # TOUCH PAD CONFIG
 PAD_X_RANGE_MAX = 940
 PAD_X_RANGE_MIN = 100
 PAD_Y_RANGE_MAX = 900
 PAD_Y_RANGE_MIN = 260
 
+# Initialize Sound Engine
+engine = pyttsx.init()
+engine.setProperty('rate', 70)
+
 
 def clamp(n, smallest, largest):
+    """ Given n, clamp its value between smallest and largest. """
     return max(smallest, min(n, largest))
 
 
 def maprange(a, b, s):
-    """ http://rosettacode.org/wiki/Map_range#Python """
+    """ http://rosettacode.org/wiki/Map_range#Python
+        Maps s from tuple range a to range b.
+    """
     (a1, a2), (b1, b2) = a, b
     return b1 + ((s - a1) * (b2 - b1) / (a2 - a1))
 
@@ -64,7 +67,6 @@ def touch_to_square(touch_x, touch_y, num_rows, num_cols):
 def read_from_port(game):
     """ Threading function which reads data from the serial port. """
     # Open Serial Port
-
     ser = serial.Serial('/dev/ttyACM0', 9600)
     while True:
 
@@ -72,6 +74,7 @@ def read_from_port(game):
         game.consumed = False
 
         if game.over:
+            ser.close()
             return
 
 
@@ -85,15 +88,28 @@ class PokemonMaskWidget(Widget):
         self.num_cols = int(256 / self.rect_size) + 1
         self.num_rectangles_unmasked = 0
 
+        self.offset_x = 125
+        self.offset_y = 150
+
         with self.canvas:
             Color(0, 0, 1)
-            self.mask = [[Rectangle(pos=(125 + row * self.rect_size,
-                                         150 + col * self.rect_size),
+            self.mask = [[Rectangle(pos=(self.offset_x + row * self.rect_size,
+                                         self.offset_y + col * self.rect_size),
                                     size=(self.rect_size, self.rect_size))
                           for row in range(self.num_rows)]
                          for col in range(self.num_cols)]
 
+    def on_touch_down(self, touch):
+        """ Handle mouse/touch events. """
+        with self.canvas:
+            rect_x = int((touch.x - self.offset_x) / self.rect_size)
+            rect_y = int((touch.y - self.offset_y) / self.rect_size)
+            if rect_x < self.num_cols and rect_y < self.num_rows:
+                self.canvas.remove(self.mask[rect_y][rect_x])
+                self.num_rectangles_unmasked += 1
+
     def remove(self, touch_x, touch_y):
+        """ Handle touch events from the controller. """
         x, y = touch_to_square(touch_x, touch_y, self.num_rows, self.num_cols)
         with self.canvas:
             print("removing {}, {}".format(x, y))
@@ -143,24 +159,28 @@ class PokemonMasterGame(BoxLayout):
             p = vlc.MediaPlayer(os.path.join(SOUND_PATH, 'pokemon_theme.mp3'))
             p.play()
 
+    def on_enter(self):
+        """ Enter key handler. Also called when controller is triggered. """
+        # Check to see if the pokemon has been properly guessed.
+        guess = self.ids.guessbox.text.lower()
+        if guess == self.answer:
+            self.win()
+        elif guess == 'john cena':
+            self.win(cena=True)
+        elif guess == 'dj khaled':
+            self.win(khaled=True)
+        else:
+            print('No')
+            # engine.say("nah")
+            # engine.runAndWait()
+
     def run(self, dt):
         """ Run the game at certain intervals. """
         # Check for new data.
         if not self.consumed:
             if self.data[0] == '!':
-                print('Broken!')
-                # Check to see if the pokemon has been properly guessed.
-                guess = self.ids.guessbox.text.lower()
-                if guess == self.answer:
-                    self.win()
-                elif guess == 'john cena':
-                    self.win(cena=True)
-                elif guess == 'dj khaled':
-                    self.win(khaled=True)
-                else:
-                    print('No')
-                    # engine.say("nah")
-                    # engine.runAndWait()
+                print('Triggered!')
+                self.on_enter()
             else:
                 touch_info = json.loads(self.data)
                 print(touch_info['X'], touch_info['Y'], touch_info['P'])
