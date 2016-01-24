@@ -12,7 +12,7 @@ import vlc  # package python-vlc
 
 import serial
 from threading import Thread
-import time
+import random
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -50,12 +50,12 @@ def touch_to_square(touch_x, touch_y, num_rows, num_cols):
     """ Given a touch x and y, convert it to a coordinate on the square. """
     x = clamp(maprange((PAD_Y_RANGE_MAX, PAD_Y_RANGE_MIN),
                        (0, num_rows),
-                       touch_y),
+                       touch_y) + random.randrange(-1, 2),
               0, num_rows - 1)
 
     y = clamp(maprange((PAD_X_RANGE_MAX, PAD_X_RANGE_MIN),
                        (0, num_cols),
-                       touch_x),
+                       touch_x) + random.randrange(-1, 2),
               0, num_cols - 1)
 
     return (int(x), int(y))
