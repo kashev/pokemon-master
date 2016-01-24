@@ -127,6 +127,15 @@ class PokemonMasterGame(BoxLayout):
             with self.ids.pokemask.canvas:
                 Rectangle(source='res/images/john cena.png',
                           pos=self.pos, size=self.size)
+
+        elif khaled:
+            p = vlc.MediaPlayer(os.path.join(SOUND_PATH, 'dj_khaled.mp3'))
+            p.play()
+
+            with self.ids.pokemask.canvas:
+                Rectangle(source='res/images/dj khaled.jpg',
+                          pos=self.pos, size=self.size)
+
         else:
             engine.say("It's {}!".format(self.answer))
             engine.runAndWait()
@@ -146,6 +155,8 @@ class PokemonMasterGame(BoxLayout):
                     self.win()
                 elif guess == 'john cena':
                     self.win(cena=True)
+                elif guess == 'dj khaled':
+                    self.win(khaled=True)
                 else:
                     print('No')
                     # engine.say("nah")
