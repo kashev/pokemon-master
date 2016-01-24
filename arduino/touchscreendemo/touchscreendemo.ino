@@ -20,6 +20,7 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 // debounce counter for beam
 uint8_t beamDebounceCounter = 0;
 
+
 void setup(void)
 {
     Serial.begin(9600);
@@ -50,6 +51,7 @@ void loop(void)
     // pressure of 0 means no pressing!
     if (p.z > ts.pressureThreshhold)
     {
+        // Send a JSON string with touch information.
         Serial.print("{\"X\": ");
         Serial.print(p.x);
 
@@ -60,7 +62,6 @@ void loop(void)
         Serial.print(p.z);
 
         Serial.println("}");
-
     }
 
     delay(100);
