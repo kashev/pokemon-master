@@ -7,9 +7,12 @@ from __future__ import print_function
 import os
 import random
 import json
+import pyttsx
+import vlc  # package python-vlc
 
 import serial
 from threading import Thread
+import time
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -21,6 +24,10 @@ from kivy.graphics import Color, Rectangle
 
 # CONSTANTS
 POKEMON_DIR = os.path.join('res', 'images', 'pokemon')
+SOUND_PATH = os.path.join('res', 'sounds')
+
+engine = pyttsx.init()
+engine.setProperty('rate', 70)
 
 # TOUCH PAD CONFIG
 PAD_X_RANGE_MAX = 940
@@ -73,15 +80,15 @@ class PokemonMaskWidget(Widget):
     def __init__(self, **kwargs):
         super(PokemonMaskWidget, self).__init__(**kwargs)
 
-        self.rect_size = 25
-        self.num_rows = 20
-        self.num_cols = 20
+        self.rect_size = 16
+        self.num_rows = int(256 / self.rect_size) + 1
+        self.num_cols = int(256 / self.rect_size) + 1
         self.num_rectangles_unmasked = 0
 
         with self.canvas:
             Color(0, 0, 1)
-            self.mask = [[Rectangle(pos=(row * self.rect_size,
-                                         col * self.rect_size),
+            self.mask = [[Rectangle(pos=(125 + row * self.rect_size,
+                                         150 + col * self.rect_size),
                                     size=(self.rect_size, self.rect_size))
                           for row in range(self.num_rows)]
                          for col in range(self.num_cols)]
@@ -93,11 +100,6 @@ class PokemonMaskWidget(Widget):
             self.canvas.remove(self.mask[y][x])
             self.num_rectangles_unmasked += 1
 
-    def clear(self):
-        for row in self.mask:
-            for item in row:
-                self.canvas.remove(item)
-
 
 class PokemonMasterGame(BoxLayout):
     """ A box layout, which is the whole game. """
@@ -106,12 +108,31 @@ class PokemonMasterGame(BoxLayout):
     consumed = BooleanProperty(True)
     over = BooleanProperty(False)
 
-    def win(self):
+    def win(self, cena=False, khaled=False):
         """ Run winning tasks. """
+        if self.over:
+            return
+
         print('Winner!')
         self.over = True
 
-        self.ids.pokemask.clear()
+        with self.ids.pokemask.canvas:
+            self.ids.pokemask.canvas.clear()
+            self.ids.pokemask.canvas.ask_update()
+
+        if cena:
+            p = vlc.MediaPlayer(os.path.join(SOUND_PATH, 'john_cena.mp3'))
+            p.play()
+
+            with self.ids.pokemask.canvas:
+                Rectangle(source='res/images/john cena.png',
+                          pos=self.pos, size=self.size)
+        else:
+            engine.say("It's {}!".format(self.answer))
+            engine.runAndWait()
+
+            p = vlc.MediaPlayer(os.path.join(SOUND_PATH, 'pokemon_theme.mp3'))
+            p.play()
 
     def run(self, dt):
         """ Run the game at certain intervals. """
@@ -120,8 +141,15 @@ class PokemonMasterGame(BoxLayout):
             if self.data[0] == '!':
                 print('Broken!')
                 # Check to see if the pokemon has been properly guessed.
-                if self.answer == self.ids.guessbox.text.lower():
+                guess = self.ids.guessbox.text.lower()
+                if guess == self.answer:
                     self.win()
+                elif guess == 'john cena':
+                    self.win(cena=True)
+                else:
+                    print('No')
+                    # engine.say("nah")
+                    # engine.runAndWait()
             else:
                 touch_info = json.loads(self.data)
                 print(touch_info['X'], touch_info['Y'], touch_info['P'])
@@ -149,6 +177,13 @@ class PokemonApp(App):
         game.answer = pokemon.lower()
 
         Clock.schedule_interval(game.run, 1.0 / 60.0)
+
+        p = vlc.MediaPlayer(os.path.join(SOUND_PATH, 'whos_that_pokemon.mp3'))
+        p.play()
+
+        p = vlc.MediaPlayer(os.path.join(SOUND_PATH, 'crys',
+                                         '{}.ogg'.format(pokemon)))
+        p.play()
 
         return game
 
