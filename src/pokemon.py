@@ -22,6 +22,37 @@ from kivy.graphics import Color, Rectangle
 # CONSTANTS
 POKEMON_DIR = os.path.join('res', 'images', 'pokemon')
 
+# TOUCH PAD CONFIG
+PAD_X_RANGE_MAX = 940
+PAD_X_RANGE_MIN = 100
+PAD_Y_RANGE_MAX = 900
+PAD_Y_RANGE_MIN = 260
+
+
+def clamp(n, smallest, largest):
+    return max(smallest, min(n, largest))
+
+
+def maprange(a, b, s):
+    """ http://rosettacode.org/wiki/Map_range#Python """
+    (a1, a2), (b1, b2) = a, b
+    return b1 + ((s - a1) * (b2 - b1) / (a2 - a1))
+
+
+def touch_to_square(touch_x, touch_y, num_rows, num_cols):
+    """ Given a touch x and y, convert it to a coordinate on the square. """
+    x = clamp(maprange((PAD_Y_RANGE_MAX, PAD_Y_RANGE_MIN),
+                       (0, num_rows),
+                       touch_y),
+              0, num_rows - 1)
+
+    y = clamp(maprange((PAD_X_RANGE_MAX, PAD_X_RANGE_MIN),
+                       (0, num_cols),
+                       touch_x),
+              0, num_cols - 1)
+
+    return (int(x), int(y))
+
 
 def read_from_port(game):
     """ Threading function which reads data from the serial port. """
@@ -42,7 +73,7 @@ class PokemonMaskWidget(Widget):
     def __init__(self, **kwargs):
         super(PokemonMaskWidget, self).__init__(**kwargs)
 
-        self.rect_size = 30
+        self.rect_size = 25
         self.num_rows = 20
         self.num_cols = 20
         self.num_rectangles_unmasked = 0
@@ -55,13 +86,17 @@ class PokemonMaskWidget(Widget):
                           for row in range(self.num_rows)]
                          for col in range(self.num_cols)]
 
-    def remove(self, x, y):
+    def remove(self, touch_x, touch_y):
+        x, y = touch_to_square(touch_x, touch_y, self.num_rows, self.num_cols)
         with self.canvas:
-            rect_x = int(x / self.rect_size)
-            rect_y = int(y / self.rect_size)
-            if rect_x < self.num_cols and rect_y < self.num_rows:
-                self.canvas.remove(self.mask[rect_y][rect_x])
-                self.num_rectangles_unmasked += 1
+            print("removing {}, {}".format(x, y))
+            self.canvas.remove(self.mask[y][x])
+            self.num_rectangles_unmasked += 1
+
+    def clear(self):
+        for row in self.mask:
+            for item in row:
+                self.canvas.remove(item)
 
 
 class PokemonMasterGame(BoxLayout):
@@ -71,6 +106,13 @@ class PokemonMasterGame(BoxLayout):
     consumed = BooleanProperty(True)
     over = BooleanProperty(False)
 
+    def win(self):
+        """ Run winning tasks. """
+        print('Winner!')
+        self.over = True
+
+        self.ids.pokemask.clear()
+
     def run(self, dt):
         """ Run the game at certain intervals. """
         # Check for new data.
@@ -79,11 +121,12 @@ class PokemonMasterGame(BoxLayout):
                 print('Broken!')
                 # Check to see if the pokemon has been properly guessed.
                 if self.answer == self.ids.guessbox.text.lower():
-                    print('Winner!')
-                    self.over = True
+                    self.win()
             else:
                 touch_info = json.loads(self.data)
                 print(touch_info['X'], touch_info['Y'], touch_info['P'])
+                self.ids.pokemask.remove(touch_info['X'], touch_info['Y'])
+
             self.consumed = True
 
 
@@ -105,7 +148,7 @@ class PokemonApp(App):
         game.ids.poke.source = pokemon_path
         game.answer = pokemon.lower()
 
-        Clock.schedule_interval(game.run, 1.0 / 10.0)
+        Clock.schedule_interval(game.run, 1.0 / 60.0)
 
         return game
 
